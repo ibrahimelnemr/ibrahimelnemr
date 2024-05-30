@@ -17,7 +17,7 @@
 
 - 🔍 Currently seeking opportunities in full-stack development.
 
-- Let's connect and explore how I can bring value to your team! 🌟
+- Let's connect and discuss how I can bring value to your team 🌟
 
 <!--
 **ibrahimelnemr/ibrahimelnemr** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
