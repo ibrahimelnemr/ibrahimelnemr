@@ -13,7 +13,7 @@
 
 - 💻 Experienced with a variety of frameworks including Node.js, React, Angular, and Flutter, as well as languages like Python and TypeScript.
 
-- 🎮 In my free time, you'll often find me diving into game development projects or contributing to open-source initiatives.
+- 🎮 In my free time, I enjoy working on game development projects or contributing to open source.
 
 - 🔍 Currently seeking opportunities in full-stack development.
 
