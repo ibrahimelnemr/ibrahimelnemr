@@ -1,4 +1,23 @@
-## Hi there 👋
+<div align="center">
+  <h2 align="center">👋 Hello, I'm Ibrahim 🚀</h3>
+</div>
+
+<div align="center">
+  <a href="https://linkedin.com/in/ibrahimelnemr" target="_blank">Linkedin</a>
+  ·
+  <a href="https://ibrahimelnemr.github.io/portfolio" target="_blank">Portfolio</a>
+</div>
+<br>
+
+- 🎓 Fresh graduate from the American University in Cairo with a passion for full-stack development and an enthusiasm for continuous learning.
+
+- 💻 Experienced with a variety of frameworks including Node.js, React, Angular, and Flutter, as well as languages like Python and TypeScript.
+
+- 🎮 In my free time, you'll often find me diving into game development projects or contributing to open-source initiatives.
+
+- 🔍 Currently seeking opportunities in full-stack development.
+
+- Let's connect and explore how I can bring value to your team! 🌟
 
 <!--
 **ibrahimelnemr/ibrahimelnemr** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
