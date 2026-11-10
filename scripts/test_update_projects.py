@@ -1,6 +1,7 @@
 import unittest
+import xml.etree.ElementTree as ET
 
-from update_projects import END, START, render_projects, select_projects, update_readme
+from update_projects import END, START, THEMES, render_card, render_projects, select_projects, update_readme
 
 
 def repo(name, pushed_at="2026-01-01T00:00:00Z", **fields):
@@ -26,16 +27,37 @@ class ProjectTests(unittest.TestCase):
         ])
         self.assertEqual([p["name"] for p in projects], ["8", "7", "6", "5", "4", "3"])
 
-    def test_descriptions_cannot_break_the_table_or_insert_html(self):
-        table = render_projects([
-            repo("example", description="A | B\n<script>[link](url)*_`", language=None)
-        ])
-        self.assertEqual(len(table.splitlines()), 3)
-        self.assertEqual(table.splitlines()[-1].count("|"), 4)
-        self.assertNotIn("<script>", table)
-        self.assertIn("&lt;script&gt;", table)
-        self.assertIn("&#91;link&#93;", table)
-        self.assertTrue(table.endswith("| — |"))
+    def test_card_escapes_repository_data_and_supports_both_themes(self):
+        project = repo("example", description='A & B <script>"test"</script>', language=None)
+        for theme in THEMES:
+            with self.subTest(theme=theme):
+                card = render_card(project, theme)
+                root = ET.fromstring(card)
+                self.assertNotIn("<script>", card)
+                self.assertIn("A &amp; B &lt;script&gt;", card)
+                self.assertIn('viewBox="0 0 440 166"', card)
+                self.assertIn("Code", "".join(root.itertext()))
+
+    def test_card_limits_long_descriptions_and_displays_actual_counts(self):
+        card = render_card(repo(
+            "example", description="A long description " * 100,
+            language="Python", stargazers_count=12, forks_count=3,
+        ), "dark")
+        root = ET.fromstring(card)
+        body = [node.text for node in root.iter() if node.get("class") == "body"]
+        self.assertLessEqual(len(body), 2)
+        self.assertTrue(body[-1].endswith("…"))
+        self.assertIn("12 stars, 3 forks", card)
+
+    def test_cards_link_to_repositories_with_light_and_dark_images(self):
+        markup = render_projects([repo("first"), repo("second"), repo("third")])
+        root = ET.fromstring(f"<div>{markup}</div>")
+        self.assertEqual(len(root.findall("p")), 2)
+        self.assertEqual(len(root.findall(".//a")), 3)
+        self.assertEqual(len(root.findall(".//source")), 3)
+        self.assertIn('href="https://github.com/ibrahimelnemr/first"', markup)
+        self.assertIn('src="assets/projects/first-light.svg"', markup)
+        self.assertIn('srcset="assets/projects/first-dark.svg"', markup)
 
     def test_preserves_other_content_and_is_repeatable(self):
         content = f"Portfolio link\n{START}\nold projects\n{END}\nOther link\n"

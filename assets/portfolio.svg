@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="238" height="46" viewBox="0 0 238 46" role="img" aria-labelledby="title">
+  <title id="title">Visit my portfolio</title>
+  <rect x=".5" y=".5" width="237" height="45" rx="8" fill="#0d1117" stroke="#35cbb4"/>
+  <g transform="translate(18 13)" fill="none" stroke="#5eead4" stroke-width="1.5">
+    <circle cx="10" cy="10" r="9"/>
+    <ellipse cx="10" cy="10" rx="4" ry="9"/>
+    <path d="M1 10h18"/>
+  </g>
+  <text x="52" y="28" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="600" fill="#f0f6fc">Visit my portfolio</text>
+  <path d="M204 23h14m-5-5 5 5-5 5" fill="none" stroke="#5eead4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

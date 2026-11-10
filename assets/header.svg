@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="220" viewBox="0 0 960 220" role="img" aria-labelledby="title desc">
+  <title id="title">Ibrahim El Nemr</title>
+  <desc id="desc">Visit ibrahimelnemr.github.io. A softly animated orbital illustration accompanies the name.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1">
+      <stop stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#102933"/>
+    </linearGradient>
+    <linearGradient id="accent">
+      <stop stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#5eead4"/>
+    </linearGradient>
+    <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.7" fill="#5eead4" opacity="0.14"/>
+    </pattern>
+  </defs>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    @media (prefers-reduced-motion: reduce) { .motion { display: none; } }
+  </style>
+  <rect x="1" y="1" width="958" height="218" rx="14" fill="url(#background)" stroke="#24404b"/>
+  <rect x="520" y="14" width="420" height="192" fill="url(#grid)"/>
+  <path d="M48 49h32" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
+  <text x="48" y="117" fill="#f0f6fc" font-size="48" font-weight="650" letter-spacing="-1.5">Ibrahim El Nemr</text>
+  <text x="50" y="161" fill="#91aeb9" font-size="17" letter-spacing="0.2">ibrahimelnemr.github.io</text>
+  <path d="M277 155h18m-6-6 6 6-6 6" fill="none" stroke="#5eead4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(788 110)">
+    <circle r="76" fill="none" stroke="#244652"/>
+    <circle r="52" fill="none" stroke="#244652"/>
+    <path d="m-16-13-14 13 14 13m32-26L30 0 16 13M7-23-7 23" fill="none" stroke="url(#accent)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="motion">
+      <circle cx="76" cy="0" r="4" fill="#5eead4"/>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="18s" repeatCount="indefinite"/>
+    </g>
+    <g class="motion">
+      <circle cx="-52" cy="0" r="3" fill="#38bdf8"/>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="12s" repeatCount="indefinite"/>
+    </g>
+  </g>
+  <path d="M48 196h864" stroke="#244652"/>
+  <path class="motion" d="M48 196h864" stroke="url(#accent)" stroke-width="2" stroke-dasharray="90 774">
+    <animate attributeName="stroke-dashoffset" from="864" to="0" dur="9s" repeatCount="indefinite"/>
+  </path>
+</svg>
