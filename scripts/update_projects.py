@@ -124,14 +124,13 @@ def render_projects(projects):
             lines.append('<p align="center">')
         name = html.escape(repo["name"], quote=True)
         url = f"https://github.com/{USERNAME}/{repo['name']}"
-        lines.extend([
-            f'  <a href="{url}">',
-            '    <picture>',
-            f'      <source media="(prefers-color-scheme: dark)" srcset="assets/projects/{name}-dark.svg" />',
-            f'      <img src="assets/projects/{name}-light.svg" width="400" alt="{name}" />',
-            '    </picture>',
-            '  </a>',
-        ])
+        # Avoid whitespace inside the link, which GitHub would underline below the card.
+        lines.append(
+            f'  <a href="{url}"><picture>'
+            f'<source media="(prefers-color-scheme: dark)" srcset="assets/projects/{name}-dark.svg" />'
+            f'<img src="assets/projects/{name}-light.svg" width="400" alt="{name}" />'
+            '</picture></a>'
+        )
         if index % 2 == 1 or index == len(projects) - 1:
             lines.append('</p>')
     return "\n".join(lines)
