@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
-from update_projects import generate, render_card, select_projects, summarize, search_count, languages_panel
+from update_projects import generate, render_card, select_projects, summarize, search_count, languages_panel, fetch_language_bytes
 
 
 def repo(name, pushed_at="2026-01-01T00:00:00Z", **fields):
@@ -46,20 +46,20 @@ class ProfileTests(unittest.TestCase):
             self.assertTrue(texts[2].endswith("…"))
             self.assertIn("12 stars, 3 forks", card)
 
-    def test_public_statistics_exclude_private_data_and_fork_stars_and_languages(self):
+    def test_public_statistics_exclude_private_data_and_fork_stars(self):
         stats = summarize([
             repo("one", language="Python", stargazers_count=3),
             repo("two", language="Python", stargazers_count=4),
             repo("three", language="Java"),
             repo("fork", fork=True, language="Ruby", stargazers_count=100),
             repo("secret", private=True, language="Secret", stargazers_count=100),
-        ], {"followers": 9}, 17)
+        ], {"followers": 9}, 17, [("Python", 200), ("Java", 100)])
         self.assertEqual(stats, {"repos": 4, "stars": 7, "followers": 9,
-                                "prs": 17, "languages": [("Python", 2), ("Java", 1)]})
+                                "prs": 17, "languages": [("Python", 200), ("Java", 100)]})
 
     def test_generated_assets_are_valid_linked_and_repeatable(self):
         projects = [repo("first", description="A & B"), repo("second")]
-        stats = summarize(projects, {"followers": 4}, 12)
+        stats = summarize(projects, {"followers": 4}, 12, [])
         markup, assets = generate(projects, stats)
         self.assertEqual(generate(projects, stats), (markup, assets))
         root = ET.fromstring(markup)
@@ -78,10 +78,33 @@ class ProfileTests(unittest.TestCase):
             self.assertNotIn("foreignObject", svg)
 
     def test_empty_languages_and_other_bucket(self):
-        self.assertIn("No primary language data yet", languages_panel({"languages": []}))
+        self.assertIn("No language data yet", languages_panel({"languages": []}))
         svg = languages_panel({"languages": [(str(i), 1) for i in range(8)]})
-        self.assertIn("Other · 3", svg)
+        self.assertIn("Other · 37.5%", svg)
         ET.fromstring(svg)
+
+    @patch("update_projects.api")
+    def test_languages_aggregate_bytes_including_secondary_languages(self, api):
+        api.side_effect = [{"Python": 300, "HTML": 100}, {"Python": 100, "TypeScript": 500}, {}]
+        result = fetch_language_bytes([
+            repo("first", language="Python"), repo("second", language="TypeScript"),
+            repo("empty", language=None), repo("fork", fork=True), repo("secret", private=True),
+        ])
+        self.assertEqual(result, [("TypeScript", 500), ("Python", 400), ("HTML", 100)])
+        self.assertEqual([call.args[0] for call in api.call_args_list], [
+            "repos/ibrahimelnemr/first/languages", "repos/ibrahimelnemr/second/languages",
+            "repos/ibrahimelnemr/empty/languages",
+        ])
+
+    def test_language_percentages_and_bar_are_weighted_by_bytes(self):
+        for mobile in (False, True):
+            svg = languages_panel({"languages": [("Python", 900), ("HTML", 100)]}, mobile)
+            self.assertIn("Python · 90.0%", svg)
+            self.assertIn("HTML · 10.0%", svg)
+            root = ET.fromstring(svg)
+            bars = [n for n in root.iter() if n.tag.endswith("rect") and n.get("height") == "8"]
+            self.assertEqual(len(bars), 2)
+            self.assertAlmostEqual(float(bars[0].get("width")) / float(bars[1].get("width")), 9)
 
     @patch("update_projects.api", return_value={"incomplete_results": True, "total_count": 12})
     def test_incomplete_search_fails_instead_of_publishing_inaccurate_statistics(self, api):
