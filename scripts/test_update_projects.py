@@ -1,22 +1,20 @@
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
-from update_projects import END, START, THEMES, render_card, render_projects, select_projects, update_readme
+from update_projects import generate, render_card, select_projects, summarize, search_count, languages_panel
 
 
 def repo(name, pushed_at="2026-01-01T00:00:00Z", **fields):
     return {"name": name, "pushed_at": pushed_at, **fields}
 
 
-class ProjectTests(unittest.TestCase):
+class ProfileTests(unittest.TestCase):
     def test_excludes_private_forked_archived_and_profile_repositories(self):
         projects = select_projects([
-            repo("private", private=True),
-            repo("fork", fork=True),
-            repo("archive", archived=True),
-            repo("IbrahimElNemr"),
-            repo("ibrahimelnemr.github.io"),
-            repo("empty", pushed_at=None),
+            repo("private", private=True), repo("fork", fork=True),
+            repo("archive", archived=True), repo("IbrahimElNemr"),
+            repo("ibrahimelnemr.github.io"), repo("empty", pushed_at=None),
             repo("public-project"),
         ])
         self.assertEqual([p["name"] for p in projects], ["public-project"])
@@ -27,51 +25,68 @@ class ProjectTests(unittest.TestCase):
         ])
         self.assertEqual([p["name"] for p in projects], ["8", "7", "6", "5", "4", "3"])
 
-    def test_card_escapes_repository_data_and_supports_both_themes(self):
+    def test_card_escapes_repository_data_in_both_layouts(self):
         project = repo("example", description='A & B <script>"test"</script>', language=None)
-        for theme in THEMES:
-            with self.subTest(theme=theme):
-                card = render_card(project, theme)
+        for mobile in (False, True):
+            with self.subTest(mobile=mobile):
+                card = render_card(project, mobile)
                 root = ET.fromstring(card)
                 self.assertNotIn("<script>", card)
                 self.assertIn("A &amp; B &lt;script&gt;", card)
-                self.assertIn('viewBox="0 0 440 166"', card)
                 self.assertIn("Code", "".join(root.itertext()))
 
-    def test_card_limits_long_descriptions_and_displays_actual_counts(self):
-        card = render_card(repo(
-            "example", description="A long description " * 100,
-            language="Python", stargazers_count=12, forks_count=3,
-        ), "dark")
-        root = ET.fromstring(card)
-        body = [node.text for node in root.iter() if node.get("class") == "body"]
-        self.assertLessEqual(len(body), 2)
-        self.assertTrue(body[-1].endswith("…"))
-        self.assertIn("12 stars, 3 forks", card)
+    def test_card_clips_long_content_and_displays_actual_counts(self):
+        project = repo("repository-name-" * 8, description="A long description " * 100,
+                       language="Python", stargazers_count=12, forks_count=3)
+        for mobile in (False, True):
+            card = render_card(project, mobile)
+            root = ET.fromstring(card)
+            texts = [node.text or "" for node in root.iter() if node.tag.endswith('text')]
+            self.assertTrue(texts[0].endswith("…"))
+            self.assertTrue(texts[2].endswith("…"))
+            self.assertIn("12 stars, 3 forks", card)
 
-    def test_cards_link_to_repositories_with_light_and_dark_images(self):
-        markup = render_projects([repo("first"), repo("second"), repo("third")])
-        root = ET.fromstring(f"<div>{markup}</div>")
-        self.assertEqual(len(root.findall("p")), 2)
-        self.assertEqual(len(root.findall(".//a")), 3)
-        self.assertEqual(len(root.findall(".//source")), 3)
-        self.assertIn('href="https://github.com/ibrahimelnemr/first"', markup)
-        self.assertIn('src="assets/projects/first-light.svg"', markup)
-        self.assertIn('srcset="assets/projects/first-dark.svg"', markup)
+    def test_public_statistics_exclude_private_data_and_fork_stars_and_languages(self):
+        stats = summarize([
+            repo("one", language="Python", stargazers_count=3),
+            repo("two", language="Python", stargazers_count=4),
+            repo("three", language="Java"),
+            repo("fork", fork=True, language="Ruby", stargazers_count=100),
+            repo("secret", private=True, language="Secret", stargazers_count=100),
+        ], {"followers": 9}, 17, 11)
+        self.assertEqual(stats, {"repos": 4, "stars": 7, "followers": 9,
+                                "prs": 17, "merged": 11, "languages": [("Python", 2), ("Java", 1)]})
 
-    def test_preserves_other_content_and_is_repeatable(self):
-        content = f"Portfolio link\n{START}\nold projects\n{END}\nOther link\n"
-        projects = [repo("example")]
-        updated = update_readme(content, projects)
-        self.assertTrue(updated.startswith(f"Portfolio link\n{START}\n"))
-        self.assertTrue(updated.endswith(f"{END}\nOther link\n"))
-        self.assertNotIn("old projects", updated)
-        self.assertEqual(update_readme(updated, projects), updated)
+    def test_generated_assets_are_valid_linked_and_repeatable(self):
+        projects = [repo("first", description="A & B"), repo("second")]
+        stats = summarize(projects, {"followers": 4}, 12, 8)
+        markup, assets = generate(projects, stats)
+        self.assertEqual(generate(projects, stats), (markup, assets))
+        root = ET.fromstring(markup)
+        for img in root.findall(".//img"):
+            self.assertIn(img.get("src").removeprefix("assets/"), assets)
+            self.assertEqual(img.get("align"), "top")
+        for source in root.findall(".//source"):
+            self.assertIn(source.get("srcset").removeprefix("assets/"), assets)
+        links = [a.get("href") for a in root.findall(".//a")]
+        self.assertIn("https://ibrahimelnemr.github.io/", links)
+        self.assertIn("https://www.linkedin.com/in/ibrahimelnemr/", links)
+        self.assertIn("https://github.com/ibrahimelnemr/first", links)
+        for svg in assets.values():
+            ET.fromstring(svg)
+            self.assertNotIn("<script", svg)
+            self.assertNotIn("foreignObject", svg)
 
-    def test_missing_duplicate_or_reversed_markers_fail(self):
-        for content in ["no markers", f"{START}{START}{END}", f"{END}{START}"]:
-            with self.subTest(content=content), self.assertRaises(ValueError):
-                update_readme(content, [repo("example")])
+    def test_empty_languages_and_other_bucket(self):
+        self.assertIn("No primary language data yet", languages_panel({"languages": []}))
+        svg = languages_panel({"languages": [(str(i), 1) for i in range(8)]})
+        self.assertIn("Other · 3", svg)
+        ET.fromstring(svg)
+
+    @patch("update_projects.api", return_value={"incomplete_results": True, "total_count": 12})
+    def test_incomplete_search_fails_instead_of_publishing_inaccurate_statistics(self, api):
+        with self.assertRaises(ValueError):
+            search_count("is:pr is:public")
 
 
 if __name__ == "__main__":
