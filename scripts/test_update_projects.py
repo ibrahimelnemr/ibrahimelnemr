@@ -19,11 +19,11 @@ class ProfileTests(unittest.TestCase):
         ])
         self.assertEqual([p["name"] for p in projects], ["public-project"])
 
-    def test_selects_six_most_recent_pushes(self):
+    def test_selects_three_most_recent_pushes(self):
         projects = select_projects([
             repo(str(day), f"2026-01-{day:02d}T00:00:00Z") for day in range(1, 9)
         ])
-        self.assertEqual([p["name"] for p in projects], ["8", "7", "6", "5", "4", "3"])
+        self.assertEqual([p["name"] for p in projects], ["8", "7", "6"])
 
     def test_card_escapes_repository_data_in_both_layouts(self):
         project = repo("example", description='A & B <script>"test"</script>', language=None)

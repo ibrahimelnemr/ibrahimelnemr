@@ -11,7 +11,7 @@ import urllib.parse
 import urllib.request
 
 USERNAME = "ibrahimelnemr"
-LIMIT = 6
+LIMIT = 3
 EXCLUDED = {USERNAME, f"{USERNAME}.github.io"}
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
