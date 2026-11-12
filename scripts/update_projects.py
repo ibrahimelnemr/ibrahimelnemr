@@ -62,12 +62,12 @@ def select_projects(repositories):
     return sorted(eligible, key=lambda repo: repo["pushed_at"], reverse=True)[:LIMIT]
 
 
-def summarize(repositories, user, prs, merged):
+def summarize(repositories, user, prs):
     public = [r for r in repositories if not r.get("private")]
     original = [r for r in public if not r.get("fork")]
     languages = Counter(r["language"] for r in original if r.get("language"))
     return {"repos": len(public), "stars": sum(r.get("stargazers_count", 0) for r in original),
-            "followers": user["followers"], "prs": prs, "merged": merged,
+            "followers": user["followers"], "prs": prs,
             "languages": languages.most_common()}
 
 
@@ -167,7 +167,7 @@ def render_card(repo, mobile=False):
 
 def stats_panel(stats, mobile=False):
     w, x = (420, 26) if mobile else (840, 40)
-    height = 216 if mobile else 142
+    height = 174 if mobile else 94
     content = ""
     entries = [(stats['repos'], 'Public repos'), (stats['stars'], 'Stars earned'),
                (stats['prs'], 'PRs opened'), (stats['followers'], 'Followers')]
@@ -177,8 +177,7 @@ def stats_panel(stats, mobile=False):
         yy = 34+row*80
         content += text(xx+14, yy, value, 31, TEXT, 650)
         content += text(xx+14, yy+24, label, 14, MUTED)
-    content += text(x+14, height-20, f"{stats['merged']} merged pull requests · public activity", 13, ACCENT)
-    return panel(w, height, content, "GitHub activity", "; ".join(f"{v} {label}" for v, label in entries) + f"; {stats['merged']} merged pull requests. Public repositories and activity only; stars exclude forks.")
+    return panel(w, height, content, "GitHub activity", "; ".join(f"{v} {label}" for v, label in entries) + ". Public repositories and activity only; stars exclude forks.")
 
 
 def languages_panel(stats, mobile=False):
@@ -189,31 +188,22 @@ def languages_panel(stats, mobile=False):
     if other:
         shown.append(("Other", other))
     content = text(x, 27, "Languages", 21, weight=600)
-    content += text(x, 51, "Original repositories by primary language", 13, MUTED)
     total = sum(n for _, n in counts)
     start = x
     for lang, n in shown:
         size = (w-2*x)*n/total
         color = LANGUAGE_COLORS.get(lang, "#8496ae")
-        content += f'<rect x="{start:.2f}" y="70" width="{size:.2f}" height="8" fill="{color}"/>'
+        content += f'<rect x="{start:.2f}" y="50" width="{size:.2f}" height="8" fill="{color}"/>'
         start += size
     for i, (lang, n) in enumerate(shown):
         cols = 2 if mobile else 3
         xx = x + (i % cols)*((w-2*x)/cols)
-        yy = 108 + (i//cols)*28
+        yy = 88 + (i//cols)*28
         content += f'<circle cx="{xx+4}" cy="{yy-4}" r="4" fill="{LANGUAGE_COLORS.get(lang, "#8496ae")}"/>'
         content += text(xx+17, yy, f"{lang} · {n}", 13, MUTED)
     if not total:
-        content += text(x, 108, "No primary language data yet", 14, MUTED)
-    return panel(w, 205 if mobile else 176, content, "Languages · original repositories by primary language", ", ".join(f"{lang}: {n} repositories" for lang,n in counts) or "No language data yet")
-
-
-def footer(mobile=False):
-    w, x = (420, 26) if mobile else (840, 40)
-    content = f'<path d="M{x} 5H{w-x}" stroke="#263b4e"/>'
-    content += text(x, 34, "View all repositories", 15, ACCENT, 500) + arrow(w-x-12, 22)
-    content += text(x, 61, "Public GitHub data · refreshed daily", 12, MUTED)
-    return panel(w, 88, content, "View all repositories ↗ · Public GitHub data refreshed daily")
+        content += text(x, 88, "No primary language data yet", 14, MUTED)
+    return panel(w, 180 if mobile else 150, content, "Languages · original repositories by primary language", ", ".join(f"{lang}: {n} repositories" for lang,n in counts) or "No language data yet")
 
 
 def image_tag(name, alt, href=None, width="100%"):
@@ -234,7 +224,6 @@ def generate(projects, stats):
     add("activity-heading", lambda mobile: heading("On GitHub", "02", mobile))
     add("activity", lambda mobile: stats_panel(stats, mobile))
     add("languages", lambda mobile: languages_panel(stats, mobile))
-    add("footer", footer)
     parts = [image_tag("header", "Ibrahim El Nemr · @ibrahimelnemr"),
              image_tag("portfolio", "Portfolio ↗", "https://ibrahimelnemr.github.io/", "50%") +
              image_tag("linkedin", "LinkedIn ↗", "https://www.linkedin.com/in/ibrahimelnemr/", "50%"),
@@ -245,9 +234,8 @@ def generate(projects, stats):
         parts.append(image_tag(name, f"{project['name']} · {project.get('description') or 'Explore the repository'}",
                                f"https://github.com/{USERNAME}/{project['name']}"))
     parts += [image_tag("activity-heading", "On GitHub"),
-              image_tag("activity", f"{stats['repos']} public repos · {stats['stars']} stars earned · {stats['prs']} PRs opened · {stats['merged']} merged · {stats['followers']} followers", f"https://github.com/pulls?q=is%3Apr+author%3A{USERNAME}+is%3Apublic"),
-              image_tag("languages", "Primary languages in original public repositories: " + ", ".join(f"{lang} ({n})" for lang,n in stats['languages']), f"https://github.com/{USERNAME}?tab=repositories"),
-              image_tag("footer", "View all repositories ↗ · public data refreshed daily", f"https://github.com/{USERNAME}?tab=repositories")]
+              image_tag("activity", f"{stats['repos']} public repos · {stats['stars']} stars earned · {stats['prs']} PRs opened · {stats['followers']} followers", f"https://github.com/pulls?q=is%3Apr+author%3A{USERNAME}+is%3Apublic"),
+              image_tag("languages", "Primary languages in original public repositories: " + ", ".join(f"{lang} ({n})" for lang,n in stats['languages']), f"https://github.com/{USERNAME}?tab=repositories")]
     # Keep both buttons adjacent, with top-aligned images joining the background.
     readme = '<!-- Generated by scripts/update_projects.py from public GitHub data. -->\n<div align="center">\n' + "\n".join(parts) + '\n</div>\n'
     return readme, assets
@@ -260,8 +248,7 @@ def main():
         raise ValueError("No eligible projects; keeping the previous profile")
     user = api(f"users/{USERNAME}")
     prs = search_count(f"author:{USERNAME} is:pr is:public")
-    merged = search_count(f"author:{USERNAME} is:pr is:merged is:public")
-    readme, assets = generate(projects, summarize(repositories, user, prs, merged))
+    readme, assets = generate(projects, summarize(repositories, user, prs))
     # Fetch and render everything before writing: API failures keep the existing profile intact.
     for name, content in assets.items():
         path = ASSETS / name

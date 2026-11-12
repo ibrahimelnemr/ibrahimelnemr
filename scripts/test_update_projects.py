@@ -53,13 +53,13 @@ class ProfileTests(unittest.TestCase):
             repo("three", language="Java"),
             repo("fork", fork=True, language="Ruby", stargazers_count=100),
             repo("secret", private=True, language="Secret", stargazers_count=100),
-        ], {"followers": 9}, 17, 11)
+        ], {"followers": 9}, 17)
         self.assertEqual(stats, {"repos": 4, "stars": 7, "followers": 9,
-                                "prs": 17, "merged": 11, "languages": [("Python", 2), ("Java", 1)]})
+                                "prs": 17, "languages": [("Python", 2), ("Java", 1)]})
 
     def test_generated_assets_are_valid_linked_and_repeatable(self):
         projects = [repo("first", description="A & B"), repo("second")]
-        stats = summarize(projects, {"followers": 4}, 12, 8)
+        stats = summarize(projects, {"followers": 4}, 12)
         markup, assets = generate(projects, stats)
         self.assertEqual(generate(projects, stats), (markup, assets))
         root = ET.fromstring(markup)
